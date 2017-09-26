@@ -2,31 +2,45 @@
 /* eslint-disable */
 'use strict';
 
-let socket;
-const SERVER_LOCATION = 'localhost:3000';
-const updatableTimer = document.querySelector('#updatableTimer');
-const updatableCounter = document.querySelector('#updatableCounter');
-const counterIncrementer = document.querySelector('#counterIncrement');
+const squareSize = 50;
+const defaultData = 'No Data Emitted';
 
-let counter = 0;
+const drawRect = (x, y, color) => {
+  console.log(color);
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, squareSize, squareSize);
+};
+
+const clearCanvas = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 const socketHandlers = Object.freeze({
-  updateTimer: data => updatableTimer.innerHTML = `Timer: ${data.timer}`,
-  updateCounter: data => {
-    counter = data.counter;
-    updatableCounter.innerHTML = `Counter: ${counter}`;
-  },
+  initCanvas: (data) => { for (let i = 0; i < data.length; i++) drawRect(data[i].x, data[i].y, data[i].color); },
+  drawSquare: (data) => drawRect(data.x, data.y, data.color),
+  clearCanvas,
 });
 
-const emitter = (eventName, data) => socket.emit('clientMsg', { eventName, data });
+
+const emitter = (eventName, data = defaultData) => socket.emit('clientMsg', { eventName, data });
 
 window.onload = () => {
+  window.canvas = document.querySelector('#canvas');
+  window.ctx = canvas.getContext('2d');
+  window.clearButton = document.querySelector('#clearCanvas');
+
   window.socket = io.connect();
-  socket.on('connect', () => console.log('Connected to server...'));
+  socket.on('connect', () => {
+    console.log('Connected to server...');
+    clearCanvas();
+  });
   socket.on('serverMsg', (data) => {
      if (socketHandlers[data.eventName]) return socketHandlers[data.eventName](data.data);
-     else console.warn(`Missing event handler for ${data.eventName}!`);
+     else console.warn(`Missing event handler for ${data.eventName}`);
   });
 
-  counterIncrementer.onclick = () => emitter('incrementCounter', {});
+  canvas.addEventListener('click', e => emitter('drawSquare', {
+    x: e.offsetX - squareSize/2,
+    y: e.offsetY - squareSize/2
+  }));
+
+  clearButton.addEventListener('click', () => emitter('clearCanvas'));
 };

@@ -1,26 +1,33 @@
 const socketio = require('socket.io');
 
+const defaultData = 'No Data Emitted';
+
 let io;
-let timer = 0;
-let counter = 0;
+const drawStack = [];
 
-const emitToTall = (eventName, data) => io.sockets.emit('serverMsg', { eventName, data });
-const emitToSocket = socket => (eventName, data) => socket.emit('serverMsg', { eventName, data });
+const emitToAll = (eventName, data = defaultData) => io.sockets.emit('serverMsg', { eventName, data });
+const emitToSocket = socket => (eventName, data = defaultData) => socket.emit('serverMsg', { eventName, data });
 
-const updateTimer = () => {
-  timer++;
-  emitToTall('updateTimer', { timer });
-};
+const randomInt0To255 = () => Math.floor(Math.random() * 255);
 
-
-const incrementCounter = () => {
-  counter++;
-  emitToTall('updateCounter', { counter });
+const randomColor = () => {
+  const r = randomInt0To255();
+  const g = randomInt0To255();
+  const b = randomInt0To255();
+  return (`rgb(${r},${g},${b})`);
 };
 
 const socketHandlers = Object.freeze({
-  test: data => console.log(data),
-  incrementCounter,
+  drawSquare: (data) => {
+    const squareObj = data;
+    squareObj.color = randomColor();
+    drawStack.push(squareObj);
+    emitToAll('drawSquare', squareObj);
+  },
+  clearCanvas: () => {
+    drawStack.splice(0, drawStack.length);
+    emitToAll('clearCanvas');
+  },
 });
 
 const onDisconnect = (sock) => {
@@ -28,14 +35,11 @@ const onDisconnect = (sock) => {
   console.log(`Socket ${socket.id} has disconnected...`);
 };
 
-setInterval(updateTimer, 1000);
-
 module.exports = Object.freeze({
   init: (server) => {
     io = socketio(server);
     io.sockets.on('connection', (socket) => {
-      emitToSocket(socket)('updateTimer', { timer });
-      emitToSocket(socket)('updateCounter', { counter });
+      emitToSocket(socket)('initCanvas', drawStack);
       console.log(`Socket ${socket.id} has connected...`);
       socket.on('clientMsg', (data) => {
         if (socketHandlers[data.eventName]) return socketHandlers[data.eventName](data.data);

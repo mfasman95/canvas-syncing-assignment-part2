@@ -1,9 +1,16 @@
 <html lang="en">
+  <head>
+    <style>
+      canvas { border: 1px solid black; }
+    </style>
+  </head>
   <body>
     <!-- START MARKUP -->
-    <h1 id="updatableTimer">Timer: 0</h1>
-    <h1 id="updatableCounter">Counter: 0</h1>
-    <button id="counterIncrement">+</button>
+    <canvas id="canvas" width="300" height="300">
+      <h1>Canvas Cannot Be Displayed</h1>
+    </canvas>
+    <br/>
+    <button id="clearCanvas">Clear Canvas</button>
 
     <!-- LOAD SCRIPTS -->
     <script src="/socket.io/socket.io.js"></script>

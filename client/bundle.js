@@ -2,38 +2,58 @@
 /* eslint-disable */
 'use strict';
 
-var socket = void 0;
-var SERVER_LOCATION = 'localhost:3000';
-var updatableTimer = document.querySelector('#updatableTimer');
-var updatableCounter = document.querySelector('#updatableCounter');
-var counterIncrementer = document.querySelector('#counterIncrement');
+var squareSize = 50;
+var defaultData = 'No Data Emitted';
 
-var counter = 0;
+var drawRect = function drawRect(x, y, color) {
+  console.log(color);
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, squareSize, squareSize);
+};
+
+var clearCanvas = function clearCanvas() {
+  return ctx.clearRect(0, 0, canvas.width, canvas.height);
+};
 
 var socketHandlers = Object.freeze({
-  updateTimer: function updateTimer(data) {
-    return updatableTimer.innerHTML = 'Timer: ' + data.timer;
+  initCanvas: function initCanvas(data) {
+    for (var i = 0; i < data.length; i++) {
+      drawRect(data[i].x, data[i].y, data[i].color);
+    }
   },
-  updateCounter: function updateCounter(data) {
-    counter = data.counter;
-    updatableCounter.innerHTML = 'Counter: ' + counter;
-  }
+  drawSquare: function drawSquare(data) {
+    return drawRect(data.x, data.y, data.color);
+  },
+  clearCanvas: clearCanvas
 });
 
-var emitter = function emitter(eventName, data) {
+var emitter = function emitter(eventName) {
+  var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : defaultData;
   return socket.emit('clientMsg', { eventName: eventName, data: data });
 };
 
 window.onload = function () {
+  window.canvas = document.querySelector('#canvas');
+  window.ctx = canvas.getContext('2d');
+  window.clearButton = document.querySelector('#clearCanvas');
+
   window.socket = io.connect();
   socket.on('connect', function () {
-    return console.log('Connected to server...');
+    console.log('Connected to server...');
+    clearCanvas();
   });
   socket.on('serverMsg', function (data) {
-    if (socketHandlers[data.eventName]) return socketHandlers[data.eventName](data.data);else console.warn('Missing event handler for ' + data.eventName + '!');
+    if (socketHandlers[data.eventName]) return socketHandlers[data.eventName](data.data);else console.warn('Missing event handler for ' + data.eventName);
   });
 
-  counterIncrementer.onclick = function () {
-    return emitter('incrementCounter', {});
-  };
+  canvas.addEventListener('click', function (e) {
+    return emitter('drawSquare', {
+      x: e.offsetX - squareSize / 2,
+      y: e.offsetY - squareSize / 2
+    });
+  });
+
+  clearButton.addEventListener('click', function () {
+    return emitter('clearCanvas');
+  });
 };
