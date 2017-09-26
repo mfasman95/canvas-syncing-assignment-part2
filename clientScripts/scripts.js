@@ -6,7 +6,6 @@ const squareSize = 50;
 const defaultData = 'No Data Emitted';
 
 const drawRect = (x, y, color) => {
-  console.log(color);
   ctx.fillStyle = color;
   ctx.fillRect(x, y, squareSize, squareSize);
 };
